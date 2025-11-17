@@ -195,7 +195,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text('Não possui uma conta?'),
+                              const Expanded(
+                                child: Text(
+                                  'Não possui uma conta?',
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
                               TextButton(
                                 onPressed: _isLoading
                                     ? null

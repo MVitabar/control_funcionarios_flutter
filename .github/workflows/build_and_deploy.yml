@@ -84,11 +84,13 @@ jobs:
     
     - name: Create Release
       uses: softprops/action-gh-release@v1
+      continue-on-error: true
       with:
         tag_name: v${{ steps.version.outputs.VERSION }}
         name: Release v${{ steps.version.outputs.VERSION }}
         files: build/app/outputs/flutter-apk/app-release.apk
         draft: false
         prerelease: false
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

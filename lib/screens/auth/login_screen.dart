@@ -31,6 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
+      debugPrint('Intentando login con email: ${_emailController.text.trim()}');
+      
       await Provider.of<AuthProvider>(context, listen: false).login(
         _emailController.text.trim(),
         _passwordController.text,
@@ -46,20 +48,21 @@ class _LoginScreenState extends State<LoginScreen> {
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(12)),
+              borderRadius: BorderRadius.all(Radius.circular(10)),
             ),
           ),
         );
       }
     } catch (e) {
+      debugPrint('Error en login: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: AppTheme.dangerColor,
+            content: Text('Error al iniciar sesión: ${e.toString()}'),
+            backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
             ),
           ),
         );

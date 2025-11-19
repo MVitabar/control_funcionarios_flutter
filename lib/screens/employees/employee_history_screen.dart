@@ -16,7 +16,7 @@ import '../time_entries/time_entry_screen.dart';
 
 class EmployeeHistoryScreen extends StatefulWidget {
   final Employee? employee;
-  
+
   const EmployeeHistoryScreen({super.key, this.employee});
 
   @override
@@ -44,7 +44,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
 
   Future<void> _loadData() async {
     if (!mounted) return;
-    
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -54,11 +54,16 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
       // Check if user is authenticated
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (!authProvider.isAuthenticated) {
-        throw Exception('Usuário não autenticado. Por favor inicie a sessão novamente.');
+        throw Exception(
+          'Usuário não autenticado. Por favor inicie a sessão novamente.',
+        );
       }
 
       // Load employees
-      final employeeProvider = Provider.of<EmployeeProvider>(context, listen: false);
+      final employeeProvider = Provider.of<EmployeeProvider>(
+        context,
+        listen: false,
+      );
       await employeeProvider.loadEmployees();
 
       // Load all time entries
@@ -66,9 +71,9 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
       final timeEntryService = TimeEntryService();
       final entries = await timeEntryService.getTimeEntries();
       debugPrint('Carregadas ${entries.length} entradas de tempo');
-      
+
       if (!mounted) return;
-      
+
       setState(() {
         _allEntries = entries;
         _isLoading = false;
@@ -76,21 +81,29 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
     } catch (e) {
       debugPrint('Erro ao carregar dados: $e');
       String errorMessage = e.toString();
-      
+
       // Check if it's an authentication error
-      if (errorMessage.contains('401') || errorMessage.contains('Unauthorized') || errorMessage.contains('autenticado')) {
-        errorMessage = 'Sua sessão expirou. Por favor inicie a sessão novamente.';
+      if (errorMessage.contains('401') ||
+          errorMessage.contains('Unauthorized') ||
+          errorMessage.contains('autenticado')) {
+        errorMessage =
+            'Sua sessão expirou. Por favor inicie a sessão novamente.';
         if (mounted) {
-          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          final authProvider = Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          );
           await authProvider.logout();
           if (mounted) {
-            Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+            Navigator.of(
+              context,
+            ).pushNamedAndRemoveUntil('/login', (route) => false);
           }
         }
       }
-      
+
       if (!mounted) return;
-      
+
       setState(() {
         _error = errorMessage;
         _isLoading = false;
@@ -100,9 +113,12 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
 
   List<Map<String, dynamic>> _getFilteredAndGroupedEntries() {
     // Get all employees for mapping
-    final employeeProvider = Provider.of<EmployeeProvider>(context, listen: false);
+    final employeeProvider = Provider.of<EmployeeProvider>(
+      context,
+      listen: false,
+    );
     final allEmployees = employeeProvider.employees;
-    
+
     // Filter by date range and selected employee
     var filtered = _allEntries.where((entry) {
       // Date filter - only filter if dates are selected
@@ -111,12 +127,13 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
           return false;
         }
       }
-      
+
       // Employee filter
-      if (_selectedEmployee != null && entry.employee.id != _selectedEmployee!.id) {
+      if (_selectedEmployee != null &&
+          entry.employee.id != _selectedEmployee!.id) {
         return false;
       }
-      
+
       return true;
     }).toList();
 
@@ -134,7 +151,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
     return grouped.entries.map((e) {
       final entries = e.value;
       final employeeReference = entries.first.employee;
-      
+
       // Find the full Employee object from the employee list
       final fullEmployee = allEmployees.firstWhere(
         (emp) => emp.id == employeeReference.id,
@@ -146,7 +163,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
           updatedAt: DateTime.now(),
         ),
       );
-      
+
       return {
         'employee': fullEmployee,
         'entries': entries,
@@ -154,7 +171,6 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
       };
     }).toList();
   }
-
 
   Color _getStatusColor(TimeEntryStatus status) {
     switch (status) {
@@ -230,16 +246,18 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
   }
 
-  List<pw.TableRow> _buildEmployeeTableRows(List<Map<String, dynamic>> groupedEntries) {
+  List<pw.TableRow> _buildEmployeeTableRows(
+    List<Map<String, dynamic>> groupedEntries,
+  ) {
     final List<pw.TableRow> rows = [];
-    
+
     for (var group in groupedEntries) {
       final employee = group['employee'] as Employee;
       final entries = group['entries'] as List<TimeEntry>;
-      
+
       // Sort entries by date
       entries.sort((a, b) => a.date.compareTo(b.date));
-      
+
       // Employee header row (spanning all columns)
       rows.add(
         pw.TableRow(
@@ -256,7 +274,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
           ],
         ),
       );
-      
+
       // Employee entries
       for (var entry in entries) {
         rows.add(
@@ -265,27 +283,31 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
               _tableCell(''), // Empty cell for employee name
               _tableCellCenter(DateFormat('dd/MM/yyyy').format(entry.date)),
               _tableCellCenter(DateFormat('HH:mm').format(entry.entryTime)),
-              _tableCellCenter(entry.exitTime != null 
-                  ? DateFormat('HH:mm').format(entry.exitTime!) 
-                  : '--:--'),
+              _tableCellCenter(
+                entry.exitTime != null
+                    ? DateFormat('HH:mm').format(entry.exitTime!)
+                    : '--:--',
+              ),
               _tableCellCenter(_formatDuration(_calculateWorkDuration(entry))),
-              _tableCellCenter(entry.extraHours != null 
-                  ? '${entry.extraHours!.toStringAsFixed(1)}h' 
-                  : '-'),
-              _tableCellCenter(entry.notes?.isNotEmpty == true 
-                  ? entry.notes! 
-                  : '-'),
+              _tableCellCenter(
+                entry.extraHours != null
+                    ? '${entry.extraHours!.toStringAsFixed(1)}h'
+                    : '-',
+              ),
+              _tableCellCenter(
+                entry.notes?.isNotEmpty == true ? entry.notes! : '-',
+              ),
               _tableCellRight(_calculateTotalToPay(entry)),
             ],
           ),
         );
       }
-      
+
       // Employee totals row (matching React Native structure)
       final totalHours = _calculateTotalHours(entries);
       final totalExtraHours = _calculateTotalExtraHours(entries);
       final totalToPay = _calculateEmployeeTotalToPay(entries);
-      
+
       rows.add(
         pw.TableRow(
           decoration: const pw.BoxDecoration(
@@ -303,7 +325,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
           ],
         ),
       );
-      
+
       // Spacer row between employees
       rows.add(
         pw.TableRow(
@@ -320,7 +342,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
         ),
       );
     }
-    
+
     return rows;
   }
 
@@ -328,10 +350,10 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
     try {
       // Solicitar permissão de armazenamento
       // await Permission.storage.request();
-      
+
       // Obter as entradas agrupadas
       final groupedEntries = _getFilteredAndGroupedEntries();
-      
+
       if (groupedEntries.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -342,10 +364,10 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
 
       // Criar documento PDF
       final pdf = pw.Document();
-      
+
       // Carregar uma fonte que suporta caracteres Unicode
       // final font = await PdfGoogleFonts.nunitoRegular();
-      
+
       // Adicionar página ao PDF
       pdf.addPage(
         pw.MultiPage(
@@ -353,7 +375,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
           margin: const pw.EdgeInsets.all(15),
           build: (pw.Context context) {
             final List<pw.Widget> widgets = [];
-            
+
             // Título
             widgets.add(
               pw.Text(
@@ -365,45 +387,44 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                 ),
               ),
             );
-            
+
             // Período de datas
             final dateRangeText = _startDate != null && _endDate != null
                 ? 'Período: ${DateFormat('dd/MM/yyyy').format(_startDate!)} a ${DateFormat('dd/MM/yyyy').format(_endDate!)}'
                 : 'Todos os períodos';
-            
+
             widgets.add(
               pw.Padding(
                 padding: const pw.EdgeInsets.symmetric(vertical: 8),
                 child: pw.Text(
                   dateRangeText,
-                  style: pw.TextStyle(
-                    fontSize: 11,
-                    color: PdfColors.grey800,
-                  ),
+                  style: pw.TextStyle(fontSize: 11, color: PdfColors.grey800),
                 ),
               ),
             );
-            
+
             // Agrupar entradas por funcionário e criar tabela estruturada
             final groupedEntries = _getFilteredAndGroupedEntries();
-            
+
             widgets.add(
               pw.Table(
                 border: pw.TableBorder.all(color: PdfColors.grey300),
                 columnWidths: {
-                  0: const pw.FlexColumnWidth(2),  // Funcionário
-                  1: const pw.FlexColumnWidth(1),  // Data
-                  2: const pw.FlexColumnWidth(1),  // Entrada
-                  3: const pw.FlexColumnWidth(1),  // Saída
-                  4: const pw.FlexColumnWidth(1),  // Total
-                  5: const pw.FlexColumnWidth(1),  // Extras
-                  6: const pw.FlexColumnWidth(2),  // Notas
+                  0: const pw.FlexColumnWidth(2), // Funcionário
+                  1: const pw.FlexColumnWidth(1), // Data
+                  2: const pw.FlexColumnWidth(1), // Entrada
+                  3: const pw.FlexColumnWidth(1), // Saída
+                  4: const pw.FlexColumnWidth(1), // Total
+                  5: const pw.FlexColumnWidth(1), // Extras
+                  6: const pw.FlexColumnWidth(2), // Notas
                   7: const pw.FlexColumnWidth(1.2), // Total a Pagar
                 },
                 children: [
                   // Cabeçalho da tabela
                   pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                    decoration: const pw.BoxDecoration(
+                      color: PdfColors.grey200,
+                    ),
                     children: [
                       _tableCell('Funcionário', isHeader: true),
                       _tableCellCenter('Data', isHeader: true),
@@ -420,7 +441,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                 ],
               ),
             );
-            
+
             // Rodapé
             widgets.add(
               pw.Container(
@@ -439,25 +460,26 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                 ),
               ),
             );
-            
+
             return widgets;
           },
         ),
       );
-      
+
       // Salvar PDF em arquivo
       final directory = await getTemporaryDirectory();
-      final fileName = 'relatorio_horarios_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final fileName =
+          'relatorio_horarios_${DateTime.now().millisecondsSinceEpoch}.pdf';
       final file = '${directory.path}/$fileName';
       final savedFile = File(file);
       await savedFile.writeAsBytes(await pdf.save());
-      
+
       // Abrir o arquivo PDF gerado
       if (!mounted) return;
-      
+
       if (mounted) {
         final result = await OpenFile.open(savedFile.path);
-        
+
         if (result.type == ResultType.done) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -472,12 +494,11 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
           }
         }
       }
-      
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao exportar PDF: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao exportar PDF: $e')));
     }
   }
 
@@ -496,7 +517,11 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
     );
   }
 
-  pw.Widget _tableCellRight(String text, {bool isHeader = false, bool isBold = false}) {
+  pw.Widget _tableCellRight(
+    String text, {
+    bool isHeader = false,
+    bool isBold = false,
+  }) {
     return pw.Container(
       padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       alignment: pw.Alignment.centerRight,
@@ -504,7 +529,9 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
         text,
         style: pw.TextStyle(
           fontSize: 10,
-          fontWeight: (isHeader || isBold) ? pw.FontWeight.bold : pw.FontWeight.normal,
+          fontWeight: (isHeader || isBold)
+              ? pw.FontWeight.bold
+              : pw.FontWeight.normal,
           color: PdfColors.black,
         ),
       ),
@@ -541,10 +568,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF1E88E5),
-                const Color(0xFF1565C0),
-              ],
+              colors: [const Color(0xFF1E88E5), const Color(0xFF1565C0)],
             ),
           ),
         ),
@@ -552,12 +576,16 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _buildErrorState()
-              : _buildContent(),
+          ? _buildErrorState()
+          : _buildContent(),
     );
   }
 
-  void _showTimeEntryOptions(BuildContext context, Employee employee, TimeEntry entry) {
+  void _showTimeEntryOptions(
+    BuildContext context,
+    Employee employee,
+    TimeEntry entry,
+  ) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -591,10 +619,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                     color: const Color(0xFF1E88E5).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
-                    Icons.edit,
-                    color: Color(0xFF1E88E5),
-                  ),
+                  child: const Icon(Icons.edit, color: Color(0xFF1E88E5)),
                 ),
                 title: const Text('Editar entrada'),
                 subtitle: const Text('Modificar os dados desta entrada'),
@@ -603,7 +628,10 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => TimeEntryScreen(employee: employee, editingEntry: entry),
+                      builder: (context) => TimeEntryScreen(
+                        employee: employee,
+                        editingEntry: entry,
+                      ),
                     ),
                   );
                 },
@@ -616,10 +644,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                     color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
-                    Icons.delete,
-                    color: Colors.red,
-                  ),
+                  child: const Icon(Icons.delete, color: Colors.red),
                 ),
                 title: const Text('Excluir entrada'),
                 subtitle: const Text('Excluir esta entrada permanentemente'),
@@ -655,9 +680,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                 Navigator.pop(context);
                 _deleteTimeEntry(entry);
               },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: const Text('Excluir'),
             ),
           ],
@@ -668,7 +691,10 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
 
   Future<void> _deleteTimeEntry(TimeEntry entry) async {
     try {
-      await Provider.of<TimeEntryProvider>(context, listen: false).deleteTimeEntry(entry.id);
+      await Provider.of<TimeEntryProvider>(
+        context,
+        listen: false,
+      ).deleteTimeEntry(entry.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -698,11 +724,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red[400],
-            ),
+            Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
             const SizedBox(height: 16),
             Text(
               'Erro ao carregar os dados',
@@ -716,10 +738,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -729,7 +748,10 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E88E5),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
             ),
           ],
@@ -740,7 +762,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
 
   Widget _buildContent() {
     final groupedEntries = _getFilteredAndGroupedEntries();
-    
+
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -769,7 +791,9 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E88E5).withValues(alpha: 0.08),
+                          color: const Color(
+                            0xFF1E88E5,
+                          ).withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -804,7 +828,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Date Range Selector
                   Row(
                     children: [
@@ -819,10 +843,11 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                               builder: (context, child) {
                                 return Theme(
                                   data: Theme.of(context).copyWith(
-                                    colorScheme: Theme.of(context).colorScheme.copyWith(
-                                      primary: const Color(0xFF1E88E5),
-                                      secondary: const Color(0xFF1E88E5),
-                                    ),
+                                    colorScheme: Theme.of(context).colorScheme
+                                        .copyWith(
+                                          primary: const Color(0xFF1E88E5),
+                                          secondary: const Color(0xFF1E88E5),
+                                        ),
                                   ),
                                   child: child!,
                                 );
@@ -831,7 +856,8 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                             if (date != null) {
                               setState(() {
                                 _startDate = date;
-                                if (_endDate != null && _startDate!.isAfter(_endDate!)) {
+                                if (_endDate != null &&
+                                    _startDate!.isAfter(_endDate!)) {
                                   _endDate = _startDate;
                                 }
                               });
@@ -844,18 +870,26 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  const Color(0xFF1E88E5).withValues(alpha: 0.05),
-                                  const Color(0xFF1565C0).withValues(alpha: 0.05),
+                                  const Color(
+                                    0xFF1E88E5,
+                                  ).withValues(alpha: 0.05),
+                                  const Color(
+                                    0xFF1565C0,
+                                  ).withValues(alpha: 0.05),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: const Color(0xFF1E88E5).withValues(alpha: 0.15),
+                                color: const Color(
+                                  0xFF1E88E5,
+                                ).withValues(alpha: 0.15),
                                 width: 1.5,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF1E88E5).withValues(alpha: 0.08),
+                                  color: const Color(
+                                    0xFF1E88E5,
+                                  ).withValues(alpha: 0.08),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -869,7 +903,9 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                     Container(
                                       padding: const EdgeInsets.all(6),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF1E88E5).withValues(alpha: 0.1),
+                                        color: const Color(
+                                          0xFF1E88E5,
+                                        ).withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Icon(
@@ -895,8 +931,11 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  _startDate != null 
-                                      ? DateFormat('dd MMMM yyyy', 'pt_BR').format(_startDate!)
+                                  _startDate != null
+                                      ? DateFormat(
+                                          'dd MMMM yyyy',
+                                          'pt_BR',
+                                        ).format(_startDate!)
                                       : 'Selecionar data',
                                   style: const TextStyle(
                                     fontSize: 15,
@@ -917,14 +956,17 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                               context: context,
                               initialDate: _endDate ?? DateTime.now(),
                               firstDate: _startDate ?? DateTime(2020),
-                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                              lastDate: DateTime.now().add(
+                                const Duration(days: 365),
+                              ),
                               builder: (context, child) {
                                 return Theme(
                                   data: Theme.of(context).copyWith(
-                                    colorScheme: Theme.of(context).colorScheme.copyWith(
-                                      primary: const Color(0xFF1E88E5),
-                                      secondary: const Color(0xFF1E88E5),
-                                    ),
+                                    colorScheme: Theme.of(context).colorScheme
+                                        .copyWith(
+                                          primary: const Color(0xFF1E88E5),
+                                          secondary: const Color(0xFF1E88E5),
+                                        ),
                                   ),
                                   child: child!,
                                 );
@@ -943,18 +985,26 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  const Color(0xFF1E88E5).withValues(alpha: 0.05),
-                                  const Color(0xFF1565C0).withValues(alpha: 0.05),
+                                  const Color(
+                                    0xFF1E88E5,
+                                  ).withValues(alpha: 0.05),
+                                  const Color(
+                                    0xFF1565C0,
+                                  ).withValues(alpha: 0.05),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: const Color(0xFF1E88E5).withValues(alpha: 0.15),
+                                color: const Color(
+                                  0xFF1E88E5,
+                                ).withValues(alpha: 0.15),
                                 width: 1.5,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF1E88E5).withValues(alpha: 0.08),
+                                  color: const Color(
+                                    0xFF1E88E5,
+                                  ).withValues(alpha: 0.08),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -968,7 +1018,9 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                     Container(
                                       padding: const EdgeInsets.all(6),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF1E88E5).withValues(alpha: 0.1),
+                                        color: const Color(
+                                          0xFF1E88E5,
+                                        ).withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Icon(
@@ -994,8 +1046,11 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  _endDate != null 
-                                      ? DateFormat('dd MMMM yyyy', 'pt_BR').format(_endDate!)
+                                  _endDate != null
+                                      ? DateFormat(
+                                          'dd MMMM yyyy',
+                                          'pt_BR',
+                                        ).format(_endDate!)
                                       : 'Selecionar data',
                                   style: const TextStyle(
                                     fontSize: 15,
@@ -1011,7 +1066,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Employee Filter
                   Consumer<EmployeeProvider>(
                     builder: (context, employeeProvider, child) {
@@ -1027,34 +1082,22 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                           ),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: const Color(0xFF1E88E5).withValues(alpha: 0.15),
+                            color: const Color(
+                              0xFF1E88E5,
+                            ).withValues(alpha: 0.15),
                             width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF1E88E5).withValues(alpha: 0.05),
+                              color: const Color(
+                                0xFF1E88E5,
+                              ).withValues(alpha: 0.05),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
                           ],
                         ),
-                        child: DropdownButtonFormField<String>(
-                          initialValue: _selectedEmployee?.id ?? 'all',
-                          isExpanded: true,
-                          dropdownColor: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          elevation: 8,
-                          icon: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E88E5).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.keyboard_arrow_down,
-                              color: const Color(0xFF1E88E5),
-                            ),
-                          ),
+                        child: InputDecorator(
                           decoration: InputDecoration(
                             labelText: 'Selecionar Funcionário',
                             labelStyle: TextStyle(
@@ -1066,7 +1109,9 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                               margin: const EdgeInsets.all(12),
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1E88E5).withValues(alpha: 0.1),
+                                color: const Color(
+                                  0xFF1E88E5,
+                                ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(
@@ -1097,196 +1142,285 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                               vertical: 16,
                             ),
                           ),
-                          style: const TextStyle(
-                            color: Color(0xFF1565C0),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                          selectedItemBuilder: (context) {
-                            return [
-                              const Text(
-                                'Todos os funcionários',
-                                style: TextStyle(
-                                  color: Color(0xFF1565C0),
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              ...employeeProvider.employees.map((employee) {
-                                return Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 16,
-                                      backgroundColor: const Color(0xFF1E88E5).withValues(alpha: 0.1),
-                                      child: Text(
-                                        employee.name[0].toUpperCase(),
-                                        style: const TextStyle(
-                                          color: Color(0xFF1E88E5),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        employee.name,
-                                        style: const TextStyle(
-                                          color: Color(0xFF1565C0),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }),
-                            ];
-                          },
-                          items: [
-                            DropdownMenuItem<String>(
-                              value: 'all',
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _selectedEmployee?.id ?? 'all',
+                              isExpanded: true,
+                              dropdownColor: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              elevation: 8,
+                              icon: Container(
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  color: Colors.transparent,
+                                  color: const Color(
+                                    0xFF1E88E5,
+                                  ).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF1E88E5).withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        Icons.groups,
-                                        color: const Color(0xFF1E88E5),
-                                        size: 18,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        'Todos os funcionários',
-                                        style: const TextStyle(
-                                          color: Color(0xFF1565C0),
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                child: Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: const Color(0xFF1E88E5),
                                 ),
                               ),
-                            ),
-                            ...employeeProvider.employees.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final employee = entry.value;
-                              return DropdownMenuItem(
-                                value: employee.id,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    color: Colors.transparent,
-                                    border: index > 0 ? Border(
-                                      top: BorderSide(
-                                        color: const Color(0xFFE0E0E0),
-                                        width: 1,
-                                      ),
-                                    ) : null,
+                              style: const TextStyle(
+                                color: Color(0xFF1565C0),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                              selectedItemBuilder: (context) {
+                                return [
+                                  const Text(
+                                    'Todos os funcionários',
+                                    style: TextStyle(
+                                      color: Color(0xFF1565C0),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
                                   ),
-                                  child: Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 18,
-                                        backgroundColor: const Color(0xFF1E88E5).withValues(alpha: 0.1),
-                                        child: Text(
-                                          employee.name[0].toUpperCase(),
-                                          style: const TextStyle(
-                                            color: Color(0xFF1E88E5),
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
+                                  ...employeeProvider.employees.map((employee) {
+                                    return Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 16,
+                                          backgroundColor: const Color(
+                                            0xFF1E88E5,
+                                          ).withValues(alpha: 0.1),
+                                          child: Text(
+                                            employee.name[0].toUpperCase(),
+                                            style: const TextStyle(
+                                              color: Color(0xFF1E88E5),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              employee.name,
-                                              style: const TextStyle(
-                                                color: Color(0xFF1565C0),
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            employee.name,
+                                            style: const TextStyle(
+                                              color: Color(0xFF1565C0),
+                                              fontWeight: FontWeight.w600,
                                             ),
-                                            if (employee.email != null)
-                                              Text(
-                                                employee.email!,
-                                                style: TextStyle(
-                                                  color: Colors.grey[600],
-                                                  fontWeight: FontWeight.w400,
-                                                  fontSize: 12,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                          ],
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: employee.isActive 
-                                              ? const Color(0xFF4CAF50).withValues(alpha: 0.1)
-                                              : const Color(0xFF9E9E9E).withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              employee.isActive ? Icons.check_circle : Icons.cancel,
-                                              color: employee.isActive 
-                                                  ? const Color(0xFF4CAF50)
-                                                  : const Color(0xFF9E9E9E),
-                                              size: 14,
+                                      ],
+                                    );
+                                  }),
+                                ];
+                              },
+                              items: [
+                                DropdownMenuItem<String>(
+                                  value: 'all',
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: Colors.transparent,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: const Color(
+                                              0xFF1E88E5,
+                                            ).withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
                                             ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              employee.isActive ? 'Ativo' : 'Inativo',
-                                              style: TextStyle(
-                                                color: employee.isActive 
-                                                    ? const Color(0xFF4CAF50)
-                                                    : const Color(0xFF9E9E9E),
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
+                                          ),
+                                          child: Icon(
+                                            Icons.groups,
+                                            color: const Color(0xFF1E88E5),
+                                            size: 18,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            'Todos os funcionários',
+                                            style: const TextStyle(
+                                              color: Color(0xFF1565C0),
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              );
-                            }),
-                          ],
-                          onChanged: (value) {
-                            setState(() {
-                              if (value == 'all') {
-                                _selectedEmployee = null;
-                              } else {
-                                _selectedEmployee = employeeProvider.employees
-                                    .firstWhere((emp) => emp.id == value, orElse: () => Employee(id: '', name: '', isActive: true, createdAt: DateTime.now(), updatedAt: DateTime.now()));
-                              }
-                            });
-                          },
+                                ...employeeProvider.employees
+                                    .asMap()
+                                    .entries
+                                    .map((entry) {
+                                      final index = entry.key;
+                                      final employee = entry.value;
+                                      return DropdownMenuItem(
+                                        value: employee.id,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            color: Colors.transparent,
+                                            border: index > 0
+                                                ? Border(
+                                                    top: BorderSide(
+                                                      color: const Color(
+                                                        0xFFE0E0E0,
+                                                      ),
+                                                      width: 1,
+                                                    ),
+                                                  )
+                                                : null,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              CircleAvatar(
+                                                radius: 18,
+                                                backgroundColor: const Color(
+                                                  0xFF1E88E5,
+                                                ).withValues(alpha: 0.1),
+                                                child: Text(
+                                                  employee.name[0]
+                                                      .toUpperCase(),
+                                                  style: const TextStyle(
+                                                    color: Color(0xFF1E88E5),
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      employee.name,
+                                                      style: const TextStyle(
+                                                        color: Color(
+                                                          0xFF1565C0,
+                                                        ),
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        fontSize: 14,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                    if (employee.email != null)
+                                                      Text(
+                                                        employee.email!,
+                                                        style: TextStyle(
+                                                          color:
+                                                              Colors.grey[600],
+                                                          fontWeight:
+                                                              FontWeight.w400,
+                                                          fontSize: 12,
+                                                        ),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: employee.isActive
+                                                      ? const Color(
+                                                          0xFF4CAF50,
+                                                        ).withValues(alpha: 0.1)
+                                                      : const Color(
+                                                          0xFF9E9E9E,
+                                                        ).withValues(
+                                                          alpha: 0.1,
+                                                        ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      employee.isActive
+                                                          ? Icons.check_circle
+                                                          : Icons.cancel,
+                                                      color: employee.isActive
+                                                          ? const Color(
+                                                              0xFF4CAF50,
+                                                            )
+                                                          : const Color(
+                                                              0xFF9E9E9E,
+                                                            ),
+                                                      size: 14,
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      employee.isActive
+                                                          ? 'Ativo'
+                                                          : 'Inativo',
+                                                      style: TextStyle(
+                                                        color: employee.isActive
+                                                            ? const Color(
+                                                                0xFF4CAF50,
+                                                              )
+                                                            : const Color(
+                                                                0xFF9E9E9E,
+                                                              ),
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  if (value == 'all') {
+                                    _selectedEmployee = null;
+                                  } else {
+                                    _selectedEmployee = employeeProvider
+                                        .employees
+                                        .firstWhere(
+                                          (emp) => emp.id == value,
+                                          orElse: () => Employee(
+                                            id: '',
+                                            name: '',
+                                            isActive: true,
+                                            createdAt: DateTime.now(),
+                                            updatedAt: DateTime.now(),
+                                          ),
+                                        );
+                                  }
+                                });
+                              },
+                            ),
+                          ),
                         ),
                       );
                     },
@@ -1295,7 +1429,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
               ),
             ),
           ),
-          
+
           // Entries List
           if (groupedEntries.isEmpty)
             _buildEmptyState()
@@ -1312,7 +1446,10 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                 final totalExtraHours = _calculateTotalExtraHours(entries);
 
                 return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -1329,7 +1466,9 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                     collapsedBackgroundColor: Colors.transparent,
                     tilePadding: const EdgeInsets.all(16),
                     leading: CircleAvatar(
-                      backgroundColor: const Color(0xFF1E88E5).withValues(alpha: 0.1),
+                      backgroundColor: const Color(
+                        0xFF1E88E5,
+                      ).withValues(alpha: 0.1),
                       child: Text(
                         employee.name[0].toUpperCase(),
                         style: const TextStyle(
@@ -1351,9 +1490,14 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E88E5).withValues(alpha: 0.1),
+                            color: const Color(
+                              0xFF1E88E5,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -1386,7 +1530,9 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                               Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFF9800).withValues(alpha: 0.1),
+                                  color: const Color(
+                                    0xFFFF9800,
+                                  ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Icon(
@@ -1427,7 +1573,9 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                   color: Colors.grey[50],
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: const Color(0xFF1E88E5).withValues(alpha: 0.1),
+                                    color: const Color(
+                                      0xFF1E88E5,
+                                    ).withValues(alpha: 0.1),
                                     width: 1,
                                   ),
                                 ),
@@ -1443,7 +1591,9 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          DateFormat('dd/MM/yyyy').format(entry.date),
+                                          DateFormat(
+                                            'dd/MM/yyyy',
+                                          ).format(entry.date),
                                           style: TextStyle(
                                             fontSize: 13,
                                             fontWeight: FontWeight.w500,
@@ -1452,17 +1602,26 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                         ),
                                         const Spacer(),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: _getStatusColor(entry.status).withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(12),
+                                            color: _getStatusColor(
+                                              entry.status,
+                                            ).withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
                                           child: Text(
                                             _getStatusText(entry.status),
                                             style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w500,
-                                              color: _getStatusColor(entry.status),
+                                              color: _getStatusColor(
+                                                entry.status,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -1523,15 +1682,19 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                         ],
                                       ),
                                     ],
-                                    if (entry.extraHours != null && entry.extraHours! > 0) ...[
+                                    if (entry.extraHours != null &&
+                                        entry.extraHours! > 0) ...[
                                       const SizedBox(height: 4),
                                       Row(
                                         children: [
                                           Container(
                                             padding: const EdgeInsets.all(2),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFFF9800).withValues(alpha: 0.1),
-                                              borderRadius: BorderRadius.circular(4),
+                                              color: const Color(
+                                                0xFFFF9800,
+                                              ).withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
                                             ),
                                             child: Icon(
                                               Icons.access_time_filled,
@@ -1562,16 +1725,20 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                         ],
                                       ),
                                     ],
-                                    if (entry.notes != null && entry.notes!.isNotEmpty) ...[
+                                    if (entry.notes != null &&
+                                        entry.notes!.isNotEmpty) ...[
                                       const SizedBox(height: 8),
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: Colors.grey[100],
-                                          borderRadius: BorderRadius.circular(6),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                         ),
                                         child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Icon(
                                               Icons.note,
@@ -1593,11 +1760,11 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                         ),
                                       ),
                                     ],
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        }).toList(),
+                            );
+                          }).toList(),
                         ),
                       ),
                     ],
@@ -1617,11 +1784,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.schedule,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.schedule, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'Nenhum registro para as datas selecionadas',
@@ -1634,10 +1797,7 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
             const SizedBox(height: 8),
             Text(
               'Tente ajustando o período ou os filtros',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
           ],
         ),

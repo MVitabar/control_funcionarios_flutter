@@ -72,10 +72,21 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
       final entries = await timeEntryService.getTimeEntries();
       debugPrint('Carregadas ${entries.length} entradas de tempo');
 
+      // Filter out entries with invalid/empty employee names
+      final validEntries = entries.where((entry) {
+        return entry.employee.name.isNotEmpty;
+      }).toList();
+
+      if (validEntries.length < entries.length) {
+        debugPrint(
+          'Filtradas ${entries.length - validEntries.length} entradas com funcionários inválidos',
+        );
+      }
+
       if (!mounted) return;
 
       setState(() {
-        _allEntries = entries;
+        _allEntries = validEntries;
         _isLoading = false;
       });
     } catch (e) {
@@ -934,7 +945,6 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                   _startDate != null
                                       ? DateFormat(
                                           'dd MMMM yyyy',
-                                          'pt_BR',
                                         ).format(_startDate!)
                                       : 'Selecionar data',
                                   style: const TextStyle(
@@ -1049,7 +1059,6 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                   _endDate != null
                                       ? DateFormat(
                                           'dd MMMM yyyy',
-                                          'pt_BR',
                                         ).format(_endDate!)
                                       : 'Selecionar data',
                                   style: const TextStyle(
@@ -1186,7 +1195,9 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                             0xFF1E88E5,
                                           ).withValues(alpha: 0.1),
                                           child: Text(
-                                            employee.name[0].toUpperCase(),
+                                            employee.name.isNotEmpty
+                                                ? employee.name[0].toUpperCase()
+                                                : '?',
                                             style: const TextStyle(
                                               color: Color(0xFF1E88E5),
                                               fontWeight: FontWeight.bold,
@@ -1292,8 +1303,10 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                                                   0xFF1E88E5,
                                                 ).withValues(alpha: 0.1),
                                                 child: Text(
-                                                  employee.name[0]
-                                                      .toUpperCase(),
+                                                  employee.name.isNotEmpty
+                                                      ? employee.name[0]
+                                                            .toUpperCase()
+                                                      : '?',
                                                   style: const TextStyle(
                                                     color: Color(0xFF1E88E5),
                                                     fontWeight: FontWeight.bold,
@@ -1470,7 +1483,9 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
                         0xFF1E88E5,
                       ).withValues(alpha: 0.1),
                       child: Text(
-                        employee.name[0].toUpperCase(),
+                        employee.name.isNotEmpty
+                            ? employee.name[0].toUpperCase()
+                            : '?',
                         style: const TextStyle(
                           color: Color(0xFF1E88E5),
                           fontWeight: FontWeight.bold,

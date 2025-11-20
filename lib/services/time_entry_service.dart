@@ -8,25 +8,29 @@ class TimeEntryService {
   final ApiClient _apiClient = ApiClient();
 
   // Get all time entries
-  Future<List<TimeEntry>> getTimeEntries({DateTime? startDate, DateTime? endDate}) async {
+  Future<List<TimeEntry>> getTimeEntries({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     try {
       // Set default date range if not provided (current month)
       final now = DateTime.now();
       final defaultStart = startDate ?? DateTime(now.year, now.month, 1);
       final defaultEnd = endDate ?? DateTime(now.year, now.month + 1, 0);
-      
+
       // Format dates as YYYY-MM-DD (without time) to match React Native
-      final formattedStart = '${defaultStart.year.toString().padLeft(4, '0')}-${defaultStart.month.toString().padLeft(2, '0')}-${defaultStart.day.toString().padLeft(2, '0')}';
-      final formattedEnd = '${defaultEnd.year.toString().padLeft(4, '0')}-${defaultEnd.month.toString().padLeft(2, '0')}-${defaultEnd.day.toString().padLeft(2, '0')}';
-      
-      debugPrint('Buscando entradas de tempo com datas: $formattedStart a $formattedEnd');
-      
+      final formattedStart =
+          '${defaultStart.year.toString().padLeft(4, '0')}-${defaultStart.month.toString().padLeft(2, '0')}-${defaultStart.day.toString().padLeft(2, '0')}';
+      final formattedEnd =
+          '${defaultEnd.year.toString().padLeft(4, '0')}-${defaultEnd.month.toString().padLeft(2, '0')}-${defaultEnd.day.toString().padLeft(2, '0')}';
+
+      debugPrint(
+        'Buscando entradas de tempo com datas: $formattedStart a $formattedEnd',
+      );
+
       final response = await _apiClient.get(
         ApiConstants.timeEntries,
-        queryParameters: {
-          'startDate': formattedStart,
-          'endDate': formattedEnd,
-        },
+        queryParameters: {'startDate': formattedStart, 'endDate': formattedEnd},
       );
 
       if (response.statusCode == 200) {
@@ -34,7 +38,9 @@ class TimeEntryService {
         debugPrint('Analisadas ${data.length} entradas de tempo da API');
         return data.map((json) => TimeEntry.fromJson(json)).toList();
       } else {
-        throw Exception('Falha ao obter entradas de tempo: ${response.statusCode}');
+        throw Exception(
+          'Falha ao obter entradas de tempo: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_apiClient.handleError(e));
@@ -49,7 +55,9 @@ class TimeEntryService {
       if (response.statusCode == 200) {
         return TimeEntry.fromJson(response.data);
       } else {
-        throw Exception('Falha ao obter entrada de tempo: ${response.statusCode}');
+        throw Exception(
+          'Falha ao obter entrada de tempo: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_apiClient.handleError(e));
@@ -67,7 +75,9 @@ class TimeEntryService {
       if (response.statusCode == 201) {
         return TimeEntry.fromJson(response.data);
       } else {
-        throw Exception('Falha ao criar entrada de tempo: ${response.statusCode}');
+        throw Exception(
+          'Falha ao criar entrada de tempo: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_apiClient.handleError(e));
@@ -75,19 +85,34 @@ class TimeEntryService {
   }
 
   // Update time entry
-  Future<TimeEntry> updateTimeEntry(String id, TimeEntryUpdateData entryData) async {
+  Future<TimeEntry> updateTimeEntry(
+    String id,
+    TimeEntryUpdateData entryData,
+  ) async {
     try {
+      final jsonData = entryData.toJson();
+      debugPrint('=== UPDATE TIME ENTRY ===');
+      debugPrint('ID: $id');
+      debugPrint('Data being sent: $jsonData');
+
       final response = await _apiClient.put(
         '${ApiConstants.timeEntries}/$id',
-        data: entryData.toJson(),
+        data: jsonData,
       );
+
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response data: ${response.data}');
 
       if (response.statusCode == 200) {
         return TimeEntry.fromJson(response.data);
       } else {
-        throw Exception('Falha ao atualizar entrada de tempo: ${response.statusCode}');
+        throw Exception(
+          'Falha ao atualizar entrada de tempo: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
+      debugPrint('DioException: ${e.message}');
+      debugPrint('Response: ${e.response?.data}');
       throw Exception(_apiClient.handleError(e));
     }
   }
@@ -103,7 +128,9 @@ class TimeEntryService {
       if (response.statusCode == 200) {
         return TimeEntry.fromJson(response.data);
       } else {
-        throw Exception('Falha ao registrar horário de saída: ${response.statusCode}');
+        throw Exception(
+          'Falha ao registrar horário de saída: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_apiClient.handleError(e));
@@ -113,13 +140,17 @@ class TimeEntryService {
   // Delete time entry
   Future<void> deleteTimeEntry(String id) async {
     try {
-      final response = await _apiClient.delete('${ApiConstants.timeEntries}/$id');
+      final response = await _apiClient.delete(
+        '${ApiConstants.timeEntries}/$id',
+      );
 
       if (response.statusCode == 200) {
         // Time entry deleted successfully
         return;
       } else {
-        throw Exception('Falha ao excluir entrada de tempo: ${response.statusCode}');
+        throw Exception(
+          'Falha ao excluir entrada de tempo: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_apiClient.handleError(e));
@@ -127,7 +158,9 @@ class TimeEntryService {
   }
 
   // Get time entries with filters
-  Future<List<TimeEntry>> getTimeEntriesWithFilter(TimeEntryFilter filter) async {
+  Future<List<TimeEntry>> getTimeEntriesWithFilter(
+    TimeEntryFilter filter,
+  ) async {
     try {
       final response = await _apiClient.get(
         ApiConstants.timeEntries,
@@ -138,7 +171,9 @@ class TimeEntryService {
         final List<dynamic> data = response.data;
         return data.map((json) => TimeEntry.fromJson(json)).toList();
       } else {
-        throw Exception('Falha ao obter entradas de tempo filtradas: ${response.statusCode}');
+        throw Exception(
+          'Falha ao obter entradas de tempo filtradas: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_apiClient.handleError(e));
@@ -156,7 +191,9 @@ class TimeEntryService {
         final List<dynamic> data = response.data;
         return data.map((json) => TimeEntry.fromJson(json)).toList();
       } else {
-        throw Exception('Falha ao obter entradas de tempo do funcionário: ${response.statusCode}');
+        throw Exception(
+          'Falha ao obter entradas de tempo do funcionário: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_apiClient.handleError(e));
@@ -181,7 +218,9 @@ class TimeEntryService {
         final List<dynamic> data = response.data;
         return data.map((json) => TimeEntry.fromJson(json)).toList();
       } else {
-        throw Exception('Falha ao obter entradas de tempo por período: ${response.statusCode}');
+        throw Exception(
+          'Falha ao obter entradas de tempo por período: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_apiClient.handleError(e));
@@ -199,7 +238,9 @@ class TimeEntryService {
       if (response.statusCode == 200) {
         return TimeEntry.fromJson(response.data);
       } else {
-        throw Exception('Falha ao aprovar entrada de tempo: ${response.statusCode}');
+        throw Exception(
+          'Falha ao aprovar entrada de tempo: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_apiClient.handleError(e));
@@ -217,7 +258,9 @@ class TimeEntryService {
       if (response.statusCode == 200) {
         return TimeEntry.fromJson(response.data);
       } else {
-        throw Exception('Falha ao rejeitar entrada de tempo: ${response.statusCode}');
+        throw Exception(
+          'Falha ao rejeitar entrada de tempo: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_apiClient.handleError(e));
@@ -236,7 +279,9 @@ class TimeEntryService {
         final List<dynamic> data = response.data;
         return data.map((json) => TimeEntry.fromJson(json)).toList();
       } else {
-        throw Exception('Falha ao obter entradas de tempo pendentes: ${response.statusCode}');
+        throw Exception(
+          'Falha ao obter entradas de tempo pendentes: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_apiClient.handleError(e));
@@ -260,7 +305,9 @@ class TimeEntryService {
       if (response.statusCode == 200) {
         return response.data as Map<String, dynamic>;
       } else {
-        throw Exception('Falha ao obter estatísticas de entradas de tempo: ${response.statusCode}');
+        throw Exception(
+          'Falha ao obter estatísticas de entradas de tempo: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       throw Exception(_apiClient.handleError(e));

@@ -10,8 +10,8 @@ enum TimeEntryStatus {
   rejected;
 
   String toJson() => name.toUpperCase();
-  static TimeEntryStatus fromJson(String json) => 
-      TimeEntryStatus.values.firstWhere((e) => e.name.toUpperCase() == json.toUpperCase());
+  static TimeEntryStatus fromJson(String json) => TimeEntryStatus.values
+      .firstWhere((e) => e.name.toUpperCase() == json.toUpperCase());
 }
 
 @JsonSerializable()
@@ -61,7 +61,8 @@ class TimeEntry {
     required this.updatedAt,
   });
 
-  factory TimeEntry.fromJson(Map<String, dynamic> json) => _$TimeEntryFromJson(json);
+  factory TimeEntry.fromJson(Map<String, dynamic> json) =>
+      _$TimeEntryFromJson(json);
   Map<String, dynamic> toJson() => _$TimeEntryToJson(this);
 }
 
@@ -89,11 +90,12 @@ class TimeEntryCreateData {
     this.status,
   });
 
-  factory TimeEntryCreateData.fromJson(Map<String, dynamic> json) => _$TimeEntryCreateDataFromJson(json);
+  factory TimeEntryCreateData.fromJson(Map<String, dynamic> json) =>
+      _$TimeEntryCreateDataFromJson(json);
   Map<String, dynamic> toJson() => _$TimeEntryCreateDataToJson(this);
 }
 
-@JsonSerializable()
+@JsonSerializable(includeIfNull: false)
 class TimeEntryUpdateData {
   final DateTime? date;
   final DateTime? entryTime;
@@ -103,11 +105,6 @@ class TimeEntryUpdateData {
   final double? dailyRate;
   final double? extraHours;
   final double? extraHoursRate;
-  final num? totalHours; // Can be number or string
-  final num? regularHours; // Can be number or string
-  final String? approvedBy;
-  final String? rejectedBy;
-  final String? rejectedReason;
 
   const TimeEntryUpdateData({
     this.date,
@@ -118,14 +115,10 @@ class TimeEntryUpdateData {
     this.dailyRate,
     this.extraHours,
     this.extraHoursRate,
-    this.totalHours,
-    this.regularHours,
-    this.approvedBy,
-    this.rejectedBy,
-    this.rejectedReason,
   });
 
-  factory TimeEntryUpdateData.fromJson(Map<String, dynamic> json) => _$TimeEntryUpdateDataFromJson(json);
+  factory TimeEntryUpdateData.fromJson(Map<String, dynamic> json) =>
+      _$TimeEntryUpdateDataFromJson(json);
   Map<String, dynamic> toJson() => _$TimeEntryUpdateDataToJson(this);
 }
 
@@ -145,6 +138,7 @@ class TimeEntryFilter {
     this.includeDetails = false,
   });
 
-  factory TimeEntryFilter.fromJson(Map<String, dynamic> json) => _$TimeEntryFilterFromJson(json);
+  factory TimeEntryFilter.fromJson(Map<String, dynamic> json) =>
+      _$TimeEntryFilterFromJson(json);
   Map<String, dynamic> toJson() => _$TimeEntryFilterToJson(this);
 }

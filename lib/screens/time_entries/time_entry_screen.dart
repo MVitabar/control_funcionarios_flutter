@@ -12,7 +12,7 @@ import '../employees/employee_history_screen.dart';
 class TimeEntryScreen extends StatefulWidget {
   final Employee? employee;
   final TimeEntry? editingEntry;
-  
+
   const TimeEntryScreen({super.key, this.employee, this.editingEntry});
 
   @override
@@ -27,7 +27,7 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
   final _dailyRateController = TextEditingController();
   final _extraHoursRateController = TextEditingController();
   final _extraHoursController = TextEditingController();
-  
+
   Employee? _selectedEmployee;
   DateTime? _selectedDate;
   bool _isLoading = false;
@@ -35,7 +35,7 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Load editing entry data if provided
     if (widget.editingEntry != null) {
       final entry = widget.editingEntry!;
@@ -48,7 +48,9 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
         _dailyRateController.text = entry.dailyRate!.toStringAsFixed(2);
       }
       if (entry.extraHoursRate != null) {
-        _extraHoursRateController.text = entry.extraHoursRate!.toStringAsFixed(2);
+        _extraHoursRateController.text = entry.extraHoursRate!.toStringAsFixed(
+          2,
+        );
       }
       if (entry.extraHours != null) {
         _extraHoursController.text = _formatDurationToHHMM(entry.extraHours!);
@@ -60,7 +62,7 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
       // Pre-select employee if provided for new entry
       _selectedEmployee = widget.employee;
     }
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
       Provider.of<TimeEntryProvider>(context, listen: false).loadTimeEntries();
@@ -79,7 +81,9 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
   }
 
   Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate() || _selectedEmployee == null || _selectedDate == null) {
+    if (!_formKey.currentState!.validate() ||
+        _selectedEmployee == null ||
+        _selectedDate == null) {
       return;
     }
 
@@ -111,16 +115,52 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
         }
       }
 
-      await Provider.of<TimeEntryProvider>(context, listen: false).createTimeEntry(
-        employeeId: _selectedEmployee!.id,
-        date: _selectedDate!,
-        checkIn: checkInTime,
-        checkOut: checkOutTime,
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-        dailyRate: _dailyRateController.text.trim().isEmpty ? null : double.tryParse(_dailyRateController.text),
-        extraHoursRate: _extraHoursRateController.text.trim().isEmpty ? null : double.tryParse(_extraHoursRateController.text),
-        extraHours: _parseHHMMToDouble(_extraHoursController.text),
-      );
+      // Check if we're editing or creating
+      final isEditing = widget.editingEntry != null;
+
+      if (isEditing) {
+        // Update existing entry
+        await Provider.of<TimeEntryProvider>(
+          context,
+          listen: false,
+        ).updateTimeEntry(
+          id: widget.editingEntry!.id,
+          employeeId: _selectedEmployee!.id,
+          date: _selectedDate!,
+          checkIn: checkInTime,
+          checkOut: checkOutTime,
+          notes: _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
+          dailyRate: _dailyRateController.text.trim().isEmpty
+              ? null
+              : double.tryParse(_dailyRateController.text),
+          extraHoursRate: _extraHoursRateController.text.trim().isEmpty
+              ? null
+              : double.tryParse(_extraHoursRateController.text),
+        );
+      } else {
+        // Create new entry
+        await Provider.of<TimeEntryProvider>(
+          context,
+          listen: false,
+        ).createTimeEntry(
+          employeeId: _selectedEmployee!.id,
+          date: _selectedDate!,
+          checkIn: checkInTime,
+          checkOut: checkOutTime,
+          notes: _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
+          dailyRate: _dailyRateController.text.trim().isEmpty
+              ? null
+              : double.tryParse(_dailyRateController.text),
+          extraHoursRate: _extraHoursRateController.text.trim().isEmpty
+              ? null
+              : double.tryParse(_extraHoursRateController.text),
+          extraHours: _parseHHMMToDouble(_extraHoursController.text),
+        );
+      }
 
       if (mounted) {
         showDialog(
@@ -157,9 +197,11 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Entrada de tempo criada com sucesso',
-                    style: TextStyle(
+                  Text(
+                    isEditing
+                        ? 'Entrada de tempo atualizada com sucesso'
+                        : 'Entrada de tempo criada com sucesso',
+                    style: const TextStyle(
                       fontSize: 16,
                       color: Color(0xFF616161),
                     ),
@@ -173,14 +215,19 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                     Navigator.of(context).pop();
                     // Redirect to dashboard after closing dialog
                     Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const DashboardScreen(),
+                      ),
                       (route) => false,
                     );
                   },
                   style: TextButton.styleFrom(
                     backgroundColor: const Color(0xFF1E88E5),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -196,7 +243,9 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao criar entrada de tempo: $e'),
+            content: Text(
+              'Erro ao ${widget.editingEntry != null ? 'atualizar' : 'criar'} entrada de tempo: $e',
+            ),
             backgroundColor: AppTheme.dangerColor,
           ),
         );
@@ -226,7 +275,9 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(widget.editingEntry != null ? 'Editar Registro' : 'Entradas de Tempo'),
+        title: Text(
+          widget.editingEntry != null ? 'Editar Registro' : 'Entradas de Tempo',
+        ),
         backgroundColor: const Color(0xFF1E88E5),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -236,10 +287,7 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF1E88E5),
-                const Color(0xFF1565C0),
-              ],
+              colors: [const Color(0xFF1E88E5), const Color(0xFF1565C0)],
             ),
           ),
         ),
@@ -273,35 +321,39 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1E88E5).withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                widget.editingEntry != null ? Icons.edit_outlined : Icons.add_circle_outline,
-                                color: const Color(0xFF1E88E5),
-                                size: 22,
-                              ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xFF1E88E5,
+                              ).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Adicionar entrada',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1565C0),
-                                  letterSpacing: 0.3,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                            child: Icon(
+                              widget.editingEntry != null
+                                  ? Icons.edit_outlined
+                                  : Icons.add_circle_outline,
+                              color: const Color(0xFF1E88E5),
+                              size: 22,
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Adicionar entrada',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1565C0),
+                                letterSpacing: 0.3,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 16),
                       Consumer<EmployeeProvider>(
                         builder: (context, employeeProvider, child) {
@@ -321,16 +373,23 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                                     hintStyle: const TextStyle(
                                       color: Color(0xFF212121),
                                     ),
-                                    prefixIcon: Icon(Icons.person, color: const Color(0xFF1E88E5)),
+                                    prefixIcon: Icon(
+                                      Icons.person,
+                                      color: const Color(0xFF1E88E5),
+                                    ),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       borderSide: BorderSide(
-                                        color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+                                        color: const Color(
+                                          0xFF1E88E5,
+                                        ).withValues(alpha: 0.3),
                                         width: 2,
                                       ),
                                     ),
                                     filled: true,
-                                    fillColor: const Color(0xFF1E88E5).withValues(alpha: 0.08),
+                                    fillColor: const Color(
+                                      0xFF1E88E5,
+                                    ).withValues(alpha: 0.08),
                                   ),
                                   child: Row(
                                     children: [
@@ -349,7 +408,10 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) => EmployeeHistoryScreen(employee: _selectedEmployee),
+                                              builder: (context) =>
+                                                  EmployeeHistoryScreen(
+                                                    employee: _selectedEmployee,
+                                                  ),
                                             ),
                                           );
                                         },
@@ -377,7 +439,7 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                                   ),
                                 );
                               }
-                              
+
                               // Show dropdown only when no employee is pre-selected
                               return InputDecorator(
                                 decoration: InputDecoration(
@@ -390,16 +452,23 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                                   hintStyle: const TextStyle(
                                     color: Color(0xFF212121),
                                   ),
-                                  prefixIcon: Icon(Icons.people_outline, color: const Color(0xFF1E88E5)),
+                                  prefixIcon: Icon(
+                                    Icons.people_outline,
+                                    color: const Color(0xFF1E88E5),
+                                  ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide(
-                                      color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+                                      color: const Color(
+                                        0xFF1E88E5,
+                                      ).withValues(alpha: 0.3),
                                       width: 2,
                                     ),
                                   ),
                                   filled: true,
-                                  fillColor: const Color(0xFF1E88E5).withValues(alpha: 0.08),
+                                  fillColor: const Color(
+                                    0xFF1E88E5,
+                                  ).withValues(alpha: 0.08),
                                 ),
                                 child: DropdownButton<Employee>(
                                   value: null,
@@ -407,11 +476,11 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                                   underline: const SizedBox(),
                                   hint: const Text(
                                     'Selecione um funcionário',
-                                    style: TextStyle(
-                                      color: Color(0xFF212121),
-                                    ),
+                                    style: TextStyle(color: Color(0xFF212121)),
                                   ),
-                                  items: employeeProvider.employees.map((employee) {
+                                  items: employeeProvider.employees.map((
+                                    employee,
+                                  ) {
                                     return DropdownMenuItem(
                                       value: employee,
                                       child: Text(employee.name),
@@ -436,7 +505,9 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                             context: context,
                             initialDate: DateTime.now(),
                             firstDate: DateTime(2020),
-                            lastDate: DateTime.now().add(const Duration(days: 30)),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 30),
+                            ),
                           );
                           if (date != null) {
                             setState(() {
@@ -455,16 +526,23 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                             hintStyle: const TextStyle(
                               color: Color(0xFF212121),
                             ),
-                            prefixIcon: Icon(Icons.calendar_today, color: const Color(0xFF1E88E5)),
+                            prefixIcon: Icon(
+                              Icons.calendar_today,
+                              color: const Color(0xFF1E88E5),
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+                                color: const Color(
+                                  0xFF1E88E5,
+                                ).withValues(alpha: 0.3),
                                 width: 2,
                               ),
                             ),
                             filled: true,
-                            fillColor: const Color(0xFF1E88E5).withValues(alpha: 0.08),
+                            fillColor: const Color(
+                              0xFF1E88E5,
+                            ).withValues(alpha: 0.08),
                           ),
                           child: Text(
                             _selectedDate != null
@@ -485,13 +563,16 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                             initialTime: TimeOfDay.now(),
                             builder: (context, child) {
                               return MediaQuery(
-                                data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                                data: MediaQuery.of(
+                                  context,
+                                ).copyWith(alwaysUse24HourFormat: true),
                                 child: child!,
                               );
                             },
                           );
                           if (time != null) {
-                            final formattedTime = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+                            final formattedTime =
+                                '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
                             setState(() {
                               _checkInController.text = formattedTime;
                             });
@@ -508,19 +589,28 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                             hintStyle: const TextStyle(
                               color: Color(0xFF212121),
                             ),
-                            prefixIcon: Icon(Icons.login, color: const Color(0xFF1E88E5)),
+                            prefixIcon: Icon(
+                              Icons.login,
+                              color: const Color(0xFF1E88E5),
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+                                color: const Color(
+                                  0xFF1E88E5,
+                                ).withValues(alpha: 0.3),
                                 width: 2,
                               ),
                             ),
                             filled: true,
-                            fillColor: const Color(0xFF1E88E5).withValues(alpha: 0.08),
+                            fillColor: const Color(
+                              0xFF1E88E5,
+                            ).withValues(alpha: 0.08),
                           ),
                           child: Text(
-                            _checkInController.text.isEmpty ? 'Selecione o horário' : _checkInController.text,
+                            _checkInController.text.isEmpty
+                                ? 'Selecione o horário'
+                                : _checkInController.text,
                             style: const TextStyle(
                               color: Color(0xFF1565C0),
                               fontWeight: FontWeight.w600,
@@ -536,13 +626,16 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                             initialTime: TimeOfDay.now(),
                             builder: (context, child) {
                               return MediaQuery(
-                                data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                                data: MediaQuery.of(
+                                  context,
+                                ).copyWith(alwaysUse24HourFormat: true),
                                 child: child!,
                               );
                             },
                           );
                           if (time != null) {
-                            final formattedTime = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+                            final formattedTime =
+                                '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
                             setState(() {
                               _checkOutController.text = formattedTime;
                             });
@@ -559,19 +652,28 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                             hintStyle: const TextStyle(
                               color: Color(0xFF212121),
                             ),
-                            prefixIcon: Icon(Icons.logout, color: const Color(0xFF1E88E5)),
+                            prefixIcon: Icon(
+                              Icons.logout,
+                              color: const Color(0xFF1E88E5),
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+                                color: const Color(
+                                  0xFF1E88E5,
+                                ).withValues(alpha: 0.3),
                                 width: 2,
                               ),
                             ),
                             filled: true,
-                            fillColor: const Color(0xFF1E88E5).withValues(alpha: 0.08),
+                            fillColor: const Color(
+                              0xFF1E88E5,
+                            ).withValues(alpha: 0.08),
                           ),
                           child: Text(
-                            _checkOutController.text.isEmpty ? 'Selecione o horário' : _checkOutController.text,
+                            _checkOutController.text.isEmpty
+                                ? 'Selecione o horário'
+                                : _checkOutController.text,
                             style: const TextStyle(
                               color: Color(0xFF1565C0),
                               fontWeight: FontWeight.w600,
@@ -593,24 +695,29 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                           hintText: 'Digite alguma observação',
-                          hintStyle: const TextStyle(
-                            color: Color(0xFF212121),
+                          hintStyle: const TextStyle(color: Color(0xFF212121)),
+                          prefixIcon: Icon(
+                            Icons.note_alt_outlined,
+                            color: const Color(0xFF1E88E5),
                           ),
-                          prefixIcon: Icon(Icons.note_alt_outlined, color: const Color(0xFF1E88E5)),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFF1E88E5,
+                              ).withValues(alpha: 0.3),
                               width: 2,
                             ),
                           ),
                           filled: true,
-                          fillColor: const Color(0xFF1E88E5).withValues(alpha: 0.08),
+                          fillColor: const Color(
+                            0xFF1E88E5,
+                          ).withValues(alpha: 0.08),
                         ),
                         maxLines: 3,
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Horas Extras (HH:MM)
                       TextFormField(
                         controller: _extraHoursController,
@@ -625,20 +732,26 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                           hintText: '00:00',
-                          hintStyle: const TextStyle(
-                            color: Color(0xFF212121),
+                          hintStyle: const TextStyle(color: Color(0xFF212121)),
+                          prefixIcon: Icon(
+                            Icons.schedule_outlined,
+                            color: const Color(0xFF1E88E5),
                           ),
-                          prefixIcon: Icon(Icons.schedule_outlined, color: const Color(0xFF1E88E5)),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFF1E88E5,
+                              ).withValues(alpha: 0.3),
                               width: 2,
                             ),
                           ),
                           filled: true,
-                          fillColor: const Color(0xFF1E88E5).withValues(alpha: 0.08),
-                          helperText: 'Formato: HH:MM (ex: 01:30 para uma hora e meia)',
+                          fillColor: const Color(
+                            0xFF1E88E5,
+                          ).withValues(alpha: 0.08),
+                          helperText:
+                              'Formato: HH:MM (ex: 01:30 para uma hora e meia)',
                           helperStyle: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 12,
@@ -651,7 +764,7 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Valor Diário
                       TextFormField(
                         controller: _dailyRateController,
@@ -666,24 +779,31 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                           hintText: '0.00',
-                          hintStyle: const TextStyle(
-                            color: Color(0xFF212121),
+                          hintStyle: const TextStyle(color: Color(0xFF212121)),
+                          prefixIcon: Icon(
+                            Icons.attach_money_outlined,
+                            color: const Color(0xFF1E88E5),
                           ),
-                          prefixIcon: Icon(Icons.attach_money_outlined, color: const Color(0xFF1E88E5)),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFF1E88E5,
+                              ).withValues(alpha: 0.3),
                               width: 2,
                             ),
                           ),
                           filled: true,
-                          fillColor: const Color(0xFF1E88E5).withValues(alpha: 0.08),
+                          fillColor: const Color(
+                            0xFF1E88E5,
+                          ).withValues(alpha: 0.08),
                         ),
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Valor Hora Extra
                       TextFormField(
                         controller: _extraHoursRateController,
@@ -698,21 +818,28 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                           hintText: '0.00',
-                          hintStyle: const TextStyle(
-                            color: Color(0xFF212121),
+                          hintStyle: const TextStyle(color: Color(0xFF212121)),
+                          prefixIcon: Icon(
+                            Icons.access_time_outlined,
+                            color: const Color(0xFF1E88E5),
                           ),
-                          prefixIcon: Icon(Icons.access_time_outlined, color: const Color(0xFF1E88E5)),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFF1E88E5,
+                              ).withValues(alpha: 0.3),
                               width: 2,
                             ),
                           ),
                           filled: true,
-                          fillColor: const Color(0xFF1E88E5).withValues(alpha: 0.08),
+                          fillColor: const Color(
+                            0xFF1E88E5,
+                          ).withValues(alpha: 0.08),
                         ),
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -721,18 +848,25 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                             child: ElevatedButton(
                               onPressed: _isLoading ? null : _submitForm,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: _isLoading ? const Color(0xFF64B5F6) : const Color(0xFF1E88E5),
+                                backgroundColor: _isLoading
+                                    ? const Color(0xFF64B5F6)
+                                    : const Color(0xFF1E88E5),
                                 foregroundColor: Colors.white,
                                 elevation: _isLoading ? 6 : 8,
-                                shadowColor: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+                                shadowColor: const Color(
+                                  0xFF1E88E5,
+                                ).withValues(alpha: 0.3),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                               ),
                               child: _isLoading
                                   ? Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         SizedBox(
                                           width: 20,
@@ -746,7 +880,11 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                                         Text('A guardar...'),
                                       ],
                                     )
-                                  : Text(widget.editingEntry != null ? 'Guardar Alterações' : 'Adicionar Entrada'),
+                                  : Text(
+                                      widget.editingEntry != null
+                                          ? 'Guardar Alterações'
+                                          : 'Adicionar Entrada',
+                                    ),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -756,15 +894,22 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
                               backgroundColor: const Color(0xFFE3F2FD),
                               foregroundColor: const Color(0xFF1E88E5),
                               elevation: 4,
-                              shadowColor: const Color(0xFF1E88E5).withValues(alpha: 0.2),
+                              shadowColor: const Color(
+                                0xFF1E88E5,
+                              ).withValues(alpha: 0.2),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 side: BorderSide(
-                                  color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+                                  color: const Color(
+                                    0xFF1E88E5,
+                                  ).withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 24,
+                              ),
                             ),
                             child: const Text('Limpar'),
                           ),
@@ -793,16 +938,16 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
 
   double? _parseHHMMToDouble(String hhmm) {
     if (hhmm.isEmpty) return null;
-    
+
     final parts = hhmm.split(':');
     if (parts.length != 2) return null;
-    
+
     try {
       final hours = int.parse(parts[0]);
       final minutes = int.parse(parts[1]);
-      
+
       if (hours < 0 || minutes < 0 || minutes >= 60) return null;
-      
+
       return hours + (minutes / 60.0);
     } catch (e) {
       return null;
@@ -812,7 +957,10 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
   void _loadEmployeeFromReference(EmployeeReference reference) {
     // Try to find the full employee object from the provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final employeeProvider = Provider.of<EmployeeProvider>(context, listen: false);
+      final employeeProvider = Provider.of<EmployeeProvider>(
+        context,
+        listen: false,
+      );
       final employee = employeeProvider.employees.firstWhere(
         (e) => e.id == reference.id,
         orElse: () => Employee(

@@ -13,16 +13,13 @@ class TimeEntryService {
     DateTime? endDate,
   }) async {
     try {
-      // Set default date range if not provided (current month)
-      final now = DateTime.now();
-      final defaultStart = startDate ?? DateTime(now.year, now.month, 1);
-      final defaultEnd = endDate ?? DateTime(now.year, now.month + 1, 0);
+      // Set a very wide default date range if dates are not provided
+      final defaultStart = startDate ?? DateTime(2020, 1, 1);
+      final defaultEnd = endDate ?? DateTime(2030, 12, 31);
 
-      // Format dates as YYYY-MM-DD (without time) to match React Native
-      final formattedStart =
-          '${defaultStart.year.toString().padLeft(4, '0')}-${defaultStart.month.toString().padLeft(2, '0')}-${defaultStart.day.toString().padLeft(2, '0')}';
-      final formattedEnd =
-          '${defaultEnd.year.toString().padLeft(4, '0')}-${defaultEnd.month.toString().padLeft(2, '0')}-${defaultEnd.day.toString().padLeft(2, '0')}';
+      // Format dates as YYYY-MM-DD (without time) to match API requirements
+      final formattedStart = '${defaultStart.year.toString().padLeft(4, '0')}-${defaultStart.month.toString().padLeft(2, '0')}-${defaultStart.day.toString().padLeft(2, '0')}';
+      final formattedEnd = '${defaultEnd.year.toString().padLeft(4, '0')}-${defaultEnd.month.toString().padLeft(2, '0')}-${defaultEnd.day.toString().padLeft(2, '0')}';
 
       debugPrint(
         'Buscando entradas de tempo com datas: $formattedStart a $formattedEnd',
@@ -30,7 +27,10 @@ class TimeEntryService {
 
       final response = await _apiClient.get(
         ApiConstants.timeEntries,
-        queryParameters: {'startDate': formattedStart, 'endDate': formattedEnd},
+        queryParameters: {
+          'startDate': formattedStart,
+          'endDate': formattedEnd,
+        },
       );
 
       if (response.statusCode == 200) {

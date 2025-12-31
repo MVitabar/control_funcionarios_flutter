@@ -235,19 +235,41 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
   }
 
   String _calculateTotalToPay(TimeEntry entry) {
-    // Use the total field directly as in React Native
     if (entry.total != null) {
       return '\$${entry.total!.toStringAsFixed(2)}';
     }
-    return '--';
+    
+    // Si no hay total, intentar calcularlo
+    final dailyRate = entry.dailyRate ?? 0.0;
+    final regularHours = entry.regularHours != null 
+        ? (entry.regularHours is double ? entry.regularHours as double : double.tryParse(entry.regularHours.toString()) ?? 0.0)
+        : 0.0;
+    final extraHours = entry.extraHours ?? 0.0;
+    final extraRate = entry.extraHoursRate ?? (dailyRate / 8.0) * 1.5; // 1.5x el valor de la hora normal
+    
+    final total = (regularHours * (dailyRate / 8.0)) + (extraHours * extraRate);
+    return '\$${total.toStringAsFixed(2)}';
   }
 
   String _calculateEmployeeTotalToPay(List<TimeEntry> entries) {
-    // Calculate total by summing the total field of each entry (same as React Native)
     double total = 0.0;
+    
     for (var entry in entries) {
-      total += entry.total ?? 0.0;
+      if (entry.total != null) {
+        total += entry.total!;
+      } else {
+        // Calcular el total si no está definido
+        final dailyRate = entry.dailyRate ?? 0.0;
+        final regularHours = entry.regularHours != null 
+            ? (entry.regularHours is double ? entry.regularHours as double : double.tryParse(entry.regularHours.toString()) ?? 0.0)
+            : 0.0;
+        final extraHours = entry.extraHours ?? 0.0;
+        final extraRate = entry.extraHoursRate ?? (dailyRate / 8.0) * 1.5;
+        
+        total += (regularHours * (dailyRate / 8.0)) + (extraHours * extraRate);
+      }
     }
+    
     return '\$${total.toStringAsFixed(2)}';
   }
 

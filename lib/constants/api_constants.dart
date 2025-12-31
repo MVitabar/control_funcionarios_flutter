@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String baseUrl = 'https://control-funcionarios-production.up.railway.app';
+  static const String baseUrl = 'https://control-funcionarios.onrender.com';
   static const String apiVersion = '';
   
   // Auth endpoints

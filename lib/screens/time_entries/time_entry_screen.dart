@@ -92,27 +92,33 @@ class _TimeEntryScreenState extends State<TimeEntryScreen> {
     });
 
     try {
-      final now = DateTime.now();
+      final checkInParts = _checkInController.text.split(':');
+      if (checkInParts.length != 2) {
+        throw Exception('Formato de hora de entrada inválido');
+      }
+
       final checkInTime = DateTime(
         _selectedDate!.year,
         _selectedDate!.month,
         _selectedDate!.day,
-        now.hour,
-        now.minute,
+        int.parse(checkInParts[0]),
+        int.parse(checkInParts[1]),
       );
 
       DateTime? checkOutTime;
       if (_checkOutController.text.isNotEmpty) {
-        final parts = _checkOutController.text.split(':');
-        if (parts.length == 2) {
-          checkOutTime = DateTime(
-            _selectedDate!.year,
-            _selectedDate!.month,
-            _selectedDate!.day,
-            int.parse(parts[0]),
-            int.parse(parts[1]),
-          );
+        final checkOutParts = _checkOutController.text.split(':');
+        if (checkOutParts.length != 2) {
+          throw Exception('Formato de hora de saída inválido');
         }
+        
+        checkOutTime = DateTime(
+          _selectedDate!.year,
+          _selectedDate!.month,
+          _selectedDate!.day,
+          int.parse(checkOutParts[0]),
+          int.parse(checkOutParts[1]),
+        );
       }
 
       // Check if we're editing or creating

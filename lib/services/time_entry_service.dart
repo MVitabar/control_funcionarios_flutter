@@ -104,7 +104,24 @@ class TimeEntryService {
       debugPrint('Response data: ${response.data}');
 
       if (response.statusCode == 200) {
-        return TimeEntry.fromJson(response.data);
+        // Handle the _id field before parsing
+        final responseData = Map<String, dynamic>.from(response.data);
+        if (responseData['_id'] is Map) {
+          responseData['_id'] = responseData['_id']?['\$oid'] ?? 
+                              responseData['_id'].toString();
+        }
+        
+        // Ensure employee is properly formatted if it exists
+        if (responseData['employee'] is Map) {
+          final employee = Map<String, dynamic>.from(responseData['employee']);
+          if (employee['_id'] is Map) {
+            employee['_id'] = employee['_id']?['\$oid'] ?? 
+                            employee['_id'].toString();
+            responseData['employee'] = employee;
+          }
+        }
+        
+        return TimeEntry.fromJson(responseData);
       } else {
         throw Exception(
           'Falha ao atualizar entrada de tempo: ${response.statusCode}',
@@ -114,6 +131,9 @@ class TimeEntryService {
       debugPrint('DioException: ${e.message}');
       debugPrint('Response: ${e.response?.data}');
       throw Exception(_apiClient.handleError(e));
+    } catch (e) {
+      debugPrint('Error in updateTimeEntry: $e');
+      rethrow;
     }
   }
 

@@ -84,12 +84,14 @@ class TimeEntryProvider extends ChangeNotifier {
         dailyRate: dailyRate,
         extraHoursRate: extraHoursRate,
         extraHours: extraHours,
-      );
+      ).withCalculatedTotal(); // Calculate and include total
+
+      debugPrint('Creating time entry with data: ${entryData.toJson()}');
       final timeEntry = await _timeEntryService.createTimeEntry(entryData);
       _timeEntries.add(timeEntry);
     } catch (e) {
       _error = e.toString();
-      debugPrint('Erro ao criar entrada de tempo: $e');
+      debugPrint('Error creating time entry: $e');
       rethrow;
     } finally {
       _isLoading = false;
@@ -109,6 +111,7 @@ class TimeEntryProvider extends ChangeNotifier {
     String? notes,
     double? dailyRate,
     double? extraHoursRate,
+    double? extraHours,
   }) async {
     _isLoading = true;
     _error = null;
@@ -122,7 +125,10 @@ class TimeEntryProvider extends ChangeNotifier {
         notes: notes,
         dailyRate: dailyRate,
         extraHoursRate: extraHoursRate,
-      );
+        extraHours: extraHours,
+      ).withCalculatedTotal(); // Calculate and include total
+
+      debugPrint('Updating time entry with data: ${entryData.toJson()}');
       final updatedEntry = await _timeEntryService.updateTimeEntry(id, entryData);
       
       final index = _timeEntries.indexWhere((entry) => entry.id == id);
@@ -131,7 +137,7 @@ class TimeEntryProvider extends ChangeNotifier {
       }
     } catch (e) {
       _error = e.toString();
-      debugPrint('Erro ao atualizar entrada de tempo: $e');
+      debugPrint('Error updating time entry: $e');
       rethrow;
     } finally {
       _isLoading = false;

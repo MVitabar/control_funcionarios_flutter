@@ -183,18 +183,20 @@ class _EmployeeHistoryScreenState extends State<EmployeeHistoryScreen> {
     }).toList();
   }
 
-  Color _getStatusColor(TimeEntryStatus status) {
+  Color _getStatusColor(TimeEntryStatus? status) {
+    status ??= TimeEntryStatus.pending; // Default to pending if null
     switch (status) {
       case TimeEntryStatus.approved:
         return const Color(0xFF4CAF50);
-      case TimeEntryStatus.pending:
-        return const Color(0xFFFF9800);
       case TimeEntryStatus.rejected:
-        return const Color(0xFFF44336);
+        return Colors.red;
+      case TimeEntryStatus.pending:
+        return Colors.orange;
     }
   }
 
-  String _getStatusText(TimeEntryStatus status) {
+  String _getStatusText(TimeEntryStatus? status) {
+    status ??= TimeEntryStatus.pending; // Default to pending if null
     switch (status) {
       case TimeEntryStatus.approved:
         return 'Aprovado';

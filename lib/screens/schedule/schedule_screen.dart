@@ -172,7 +172,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _buildStatusChip(TimeEntryStatus status) {
+  Widget _buildStatusChip(TimeEntryStatus? status) {
+    status ??= TimeEntryStatus.pending; // Default to pending if null
     Color backgroundColor;
     String displayText;
 
@@ -198,14 +199,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Color _getStatusColor(TimeEntryStatus status) {
+  Color _getStatusColor(TimeEntryStatus? status) {
+    status ??= TimeEntryStatus.pending; // Default to pending if null
     switch (status) {
-      case TimeEntryStatus.pending:
-        return AppTheme.warningColor;
       case TimeEntryStatus.approved:
-        return AppTheme.successColor;
+        return Colors.green;
       case TimeEntryStatus.rejected:
-        return AppTheme.dangerColor;
+        return Colors.red;
+      case TimeEntryStatus.pending:
+        return Colors.orange;
     }
   }
 
